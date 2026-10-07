@@ -20,7 +20,8 @@ import { announceDelegatedTestMode, assertUserColumn, checkWithProvider, delegat
 import { googleAuthorizeUrl, mockConsentHtml, mockApproveRedirect, exchangeCode, findOrCreateGoogleUser, newLoginChallenge, codeChallengeFor, verifyState, oauthClientId, assertSignInAvailable, assertMockProviderAllowed, mintHandoffCode, redeemHandoffCode, OAUTH_CALLBACK_PATH } from './oauth'
 import { assertPermission, assertSystemManager, getRoles, permissionScope } from './permissions'
 import { ensureHomePageForTable, getVisibleHomePages } from './home-pages'
-import { EMBED_ORIGIN, landingFor, salesTargetRoutes } from './sales-target'
+import { EMBED_ORIGIN, landingFor as salesTargetLanding, salesTargetRoutes } from './sales-target'
+import { diveLandingFor, diveRoutes } from './dive-assignment'
 import { readStored, saveUpload, signFileUrl, verifyFileSignature } from './storage'
 import { isThumbnable, makeThumbnailDataUrl } from './thumbnails'
 import { globalSearch } from './search'
@@ -158,6 +159,12 @@ app.get('/api/brand', async (c) => {
 // Frappe) in addition to the Bearer token the SPA stores. Either credential
 // authenticates a request; the cookie lets Frappe-style clients work
 // unchanged and keeps the token out of reach of page scripts.
+// #3755: report viewers land on their report, not the Admin; a user with no
+// sales-target role but an assigned Dive lands on that Dive.
+async function landingFor(user: string): Promise<string | undefined> {
+  return (await salesTargetLanding(user)) ?? (await diveLandingFor(user))
+}
+
 function setSidCookie(c: Context, token: string, maxAgeSeconds: number) {
   setCookie(c, 'sid', token, {
     httpOnly: true,
@@ -591,6 +598,8 @@ const who = (c: { get: (k: 'user') => SessionUser }) => c.get('user').row_id
 
 // #3755: personalised sales-target report (identity + embed-session minting).
 app.route('/api/sales_target', salesTargetRoutes)
+// Per-user Dives (Dive Assignment rows), alongside the one sales-target Dive.
+app.route('/api/dives', diveRoutes)
 
 app.get('/api/whoami', async (c) => {
   const user = c.get('user')

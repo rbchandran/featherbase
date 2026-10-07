@@ -454,7 +454,7 @@ export function _setEmbedFetch(f: typeof fetch | null) {
 }
 
 export async function createEmbedSession(
-  initialState: ReturnType<typeof initialStateFor>,
+  initialState: Record<string, unknown>,
   cfg: EmbedConfig = embedConfig(),
 ): Promise<EmbedResult> {
   const token = process.env.MOTHERDUCK_TOKEN

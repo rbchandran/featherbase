@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { api, clearSession, getSessionUser, getToken } from '../lib/api'
 import { Logo } from '../components/Logo'
 import { SCOPE_BASES, type ScopeBasis } from 'shared'
@@ -132,6 +132,8 @@ export function SalesTargetPage() {
   const [me, setMe] = useState<Me | null>(null)
   const [embed, setEmbed] = useState<Embed>({ kind: 'loading' })
   const [pre, setPre] = useState<Pre>({ kind: 'loading' })
+  // Dives assigned to this user on top of the sales-target report (Dive Assignment).
+  const [dives, setDives] = useState<{ name: string; title: string }[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -141,6 +143,10 @@ export function SalesTargetPage() {
     const current = () => seq === openingSeq && !controller.signal.aborted
     ;(async () => {
       try {
+        // Independent of the report: the user's other Dives stay reachable whatever happens below.
+        void api.get<{ dives: { name: string; title: string }[] }>('/api/dives/mine')
+          .then((m) => { if (current()) setDives(m.dives) })
+          .catch(() => {})
         const identity = await api.get<Me>('/api/sales_target/me')
         if (!current()) return
         setMe(identity)
@@ -255,9 +261,16 @@ export function SalesTargetPage() {
             </p>
           </div>
         </div>
-        <button type="button" className="fc-btn" data-testid="logout" onClick={() => void logout()}>
-          Log out
-        </button>
+        <nav className="flex flex-wrap items-center gap-2" aria-label="Your reports">
+          {dives.map((d) => (
+            <Link key={d.name} to="/featherbase/dive/$name" params={{ name: d.name }} className="fc-btn" data-testid="dive-link">
+              {d.title}
+            </Link>
+          ))}
+          <button type="button" className="fc-btn" data-testid="logout" onClick={() => void logout()}>
+            Log out
+          </button>
+        </nav>
       </header>
 
       <main className="flex flex-1 flex-col p-3">

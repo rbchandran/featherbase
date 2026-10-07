@@ -14,6 +14,7 @@ import { OAuthCallbackPage } from './pages/OAuthCallback'
 import { AdminLayout } from './pages/AdminLayout'
 import { getToken, landingPath } from './lib/api'
 import { SalesTargetPage } from './pages/SalesTarget'
+import { DiveReportPage } from './pages/DiveReport'
 import { ListView } from './components/ListView'
 import { FormView } from './components/FormView'
 import { useMeta } from './lib/meta'
@@ -168,6 +169,21 @@ const salesTargetRoute = createRoute({
   },
   component: SalesTargetPage,
 })
+
+// A MotherDuck Dive assigned to this one user (Dive Assignment). The server
+// checks the row is the caller's and mints the session; the page frames it.
+const diveRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/featherbase/dive/$name',
+  beforeLoad: () => {
+    if (!getToken()) throw redirect({ to: '/featherbase/login' })
+  },
+  component: DiveRouteComponent,
+})
+function DiveRouteComponent() {
+  const { name } = diveRoute.useParams()
+  return <DiveReportPage name={name} />
+}
 
 // SET-002: public password-reset page (target of the emailed link).
 const resetPasswordRoute = createRoute({
@@ -729,6 +745,7 @@ export const routeTree = rootRoute.addChildren([
   portalListRoute,
   portalDocRoute,
   salesTargetRoute,
+  diveRoute,
   printRoute,
   adminRoute.addChildren([adminIndexRoute, newTableRoute, importRoute, importBatchesRoute, columnsRoute, mergeRoute, exploreRoute, mapRoute, reportRoute, kanbanRoute, calendarRoute, ganttRoute, checklistRoute, queryReportRoute, scriptReportRoute, permissionsRoute, namingRoute, dashboardRoute, homePageRoute, allTablesRoute, prototypeConnectSourceRoute, sourceBrowserRoute, jobsRoute, accessTokensRoute, tableRoute, docRoute]),
 ])

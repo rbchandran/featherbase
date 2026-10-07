@@ -1,5 +1,44 @@
 # Progress Log
 
+## 2026-10-07 — A MotherDuck Dive can be given to one named user
+
+The report page framed one Dive (`DIVE_ID`) for every viewer. The Attakulangara Store Manager
+(RR-10104) also needs the store-wide "Fashion · ATK Store TL Cockpit" Dive (`89449583…`, v120),
+and nothing could give one person one more Dive. OpenSpec change `per-user-dives`.
+
+- **`Dive Assignment` Table** (module Sales Target): `employee` → User, `title`, `dive_id`, `dive_version`
+  (pinned, never latest), optional `initial_state` JSON. The row is the grant, read on every call.
+- **`/api/dives/mine`** lists the caller's own Dives (titles and row ids only). **`POST /api/dives/:name/embed_session`**
+  mints a fresh session for the row's Dive and version with its starting state, using the sales-target
+  token and `SERVICE_ACCOUNT`; someone else's row and a missing row are the same 404, no upstream call.
+  Missing token or service account answers `not_configured`; an upstream refusal is a 502 naming its status.
+- **`/featherbase/dive/$name`** frames it like the sales-target page. The sales-target header links to the
+  reader's Dives (loaded independently of the report, so they stay reachable when it fails). Sign-in
+  landing is now sales-target first, then the user's first Dive.
+- **`pnpm --filter server assign:dive -- --user RR-10104 --dive <uuid> --version 120 --title "…"`** creates
+  the Table if missing and the row, or updates that user's row for that Dive in place.
+
+**Not a lock.** Featherbase does not restrict what an assigned Dive shows: the cockpit is ATK-wide and its
+filters stay editable. Assign whole-store Dives only to people who may see the whole store.
+
+**Verified:** `test/dive-assignment.test.ts` 8 passed (with the employee filter removed from the read, the
+landing and someone-else's-Dive tests fail). `test/dive-report-page.test.tsx` 3 passed;
+`test/sales-target-page.test.tsx` 5 passed. Server and web typecheck passed. `pnpm check:specs` 23 passed,
+`pnpm check:e2e-dsl` OK. Locally through `./init.sh`: the script run twice gives one row; a bad id is refused;
+RR-10104 signs in and lands on `/featherbase/dive/<row>` ("not configured" locally — no MotherDuck token);
+another user's address shows "not assigned"; no sideways scroll at 390px; with the viewer role the
+sales-target header shows the cockpit link and clicking it opens the Dive.
+
+**Gotchas:** server suite 943 passed, 3 failed — and the same 3 fail on `upstream/main` with this change
+stashed, so they are not this change's: `sales-target.test.ts` "opening the report records who…" (2 Access
+Log rows where 1 is expected), `dataset-snapshot.test.ts` "repeated misses count rather than duplicate",
+`sources-csv.test.ts` "a failed write never poisons the parse cache (round 3)". Not touched here. Locally `/api/sales_target/me` is a 500 when the
+`Sales Target Assignment` Table was never seeded.
+
+**Next:** on the deployment, confirm `SERVICE_ACCOUNT` can read all five shares the cockpit attaches
+(gold, silver_cross_sourced, silver_zakya, silver_gofrugal, seeds) — the Dive itself says it is admin-only —
+then run the script for RR-10104.
+
 ## 2026-10-02 — The sales-target page shows one report; the smoke test survives StyleHR sign-in
 
 Screenshots of the report on live data showed the cached table and the live Dive disagreeing. For

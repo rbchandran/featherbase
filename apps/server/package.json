@@ -21,7 +21,8 @@
     "e2e:reset": "tsx scripts/reset-e2e-db.ts",
     "e2e:serve": "tsx scripts/reset-e2e-db.ts && tsx src/migrate.ts && tsx src/run-patches.ts && tsx watch src/index.ts",
     "seed:preview": "tsx scripts/seed-preview.ts",
-    "seed:sales-target": "tsx scripts/seed-sales-target.ts"
+    "seed:sales-target": "tsx scripts/seed-sales-target.ts",
+    "assign:dive": "tsx scripts/assign-dive.ts"
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.4-r.1",
